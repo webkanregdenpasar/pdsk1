@@ -88,10 +88,7 @@ section h2 {
 }
 
 /* Placeholder Divs Styling */
-#validation-tool-placeholder,
-#calendar-placeholder,
-#problems-ticker-placeholder,
-#regulations-repo-placeholder {
+.placeholder-div { /* General class for placeholders */
     background-color: #f9fbfb;
     border: 1px dashed #bdc3c7;
     padding: 20px;
@@ -103,6 +100,53 @@ section h2 {
     align-items: center;
     justify-content: center;
     border-radius: 5px;
+}
+
+/* News Ticker Specific Styles */
+#news-ticker {
+    position: relative; /* Needed for positioning the close button */
+    overflow: hidden; /* Hide content outside the border */
+}
+
+/* Blinking effect for the news ticker content */
+#news-ticker .placeholder-div p {
+    animation: blink-animation 1s steps(1, start) infinite;
+    -webkit-animation: blink-animation 1s steps(1, start) infinite;
+}
+
+@keyframes blink-animation {
+    50% {
+        opacity: 0;
+    }
+}
+@-webkit-keyframes blink-animation {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Close button for news ticker */
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: #e74c3c; /* Red background */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1; /* Adjust for vertical centering of 'X' */
+    transition: background-color 0.3s ease;
+}
+
+.close-button:hover {
+    background-color: #c0392b;
 }
 
 /* Footer */
