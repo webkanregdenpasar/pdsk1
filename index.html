@@ -44,10 +44,30 @@
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
-    <!-- Placeholder for the header -->
-    <div id="header-placeholder"></div>
+    <header class="bg-blue-800 text-white py-6 text-center shadow-md">
+        <h1 class="text-4xl font-bold mb-4">Development & Supervision Department Dashboard</h1>
+    </header>
 
     <main class="max-w-6xl mx-auto mt-8 px-4">
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap justify-center md:justify-start border-b border-gray-200 mb-6">
+            <button class="tab-button py-3 px-6 text-lg font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 border-b-2 border-transparent transition duration-200 ease-in-out active" data-tab="calendar">
+                Calendar
+            </button>
+            <button class="tab-button py-3 px-6 text-lg font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 border-b-2 border-transparent transition duration-200 ease-in-out" data-tab="projects">
+                Projects
+            </button>
+            <button class="tab-button py-3 px-6 text-lg font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 border-b-2 border-transparent transition duration-200 ease-in-out" data-tab="news-ticker">
+                News Ticker
+            </button>
+            <button class="tab-button py-3 px-6 text-lg font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 border-b-2 border-transparent transition duration-200 ease-in-out" data-tab="repository">
+                Repository
+            </button>
+            <button class="tab-button py-3 px-6 text-lg font-medium text-gray-600 hover:text-blue-600 hover:border-blue-600 border-b-2 border-transparent transition duration-200 ease-in-out" data-tab="external-links">
+                External Links
+            </button>
+        </div>
+
         <!-- Tab Content Containers -->
         <div id="calendar-content" class="tab-content bg-white p-8 rounded-lg shadow-lg border-l-4 border-blue-500 mb-6">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Department Calendar</h2>
@@ -107,9 +127,79 @@
         </div>
     </main>
 
-    <!-- Placeholder for the footer -->
-    <div id="footer-placeholder"></div>
+    <footer class="bg-blue-800 text-white py-4 text-center mt-8 shadow-inner">
+        <p class="text-sm">&copy; 2025 Development & Supervision Department. All rights reserved.</p>
+    </footer>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const newsTickerContent = document.getElementById('news-ticker-content');
+
+            // Function to show a specific tab content and hide others
+            function showTab(tabId) {
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+
+                // Deactivate all tab buttons
+                tabButtons.forEach(button => {
+                    button.classList.remove('active', 'border-blue-600', 'text-blue-600');
+                    button.classList.add('border-transparent', 'text-gray-600');
+                });
+
+                // Show the selected tab content
+                const selectedContent = document.getElementById(`${tabId}-content`);
+                if (selectedContent) {
+                    selectedContent.classList.remove('hidden');
+                }
+
+                // Activate the corresponding tab button
+                const selectedButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+                if (selectedButton) {
+                    selectedButton.classList.add('active', 'border-blue-600', 'text-blue-600');
+                    selectedButton.classList.remove('border-transparent', 'text-gray-600');
+                }
+
+                // Special handling for news ticker: add close button if it's the active tab
+                if (tabId === 'news-ticker') {
+                    initNewsTicker();
+                }
+            }
+
+            // Add click event listeners to tab buttons
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const tabId = event.target.dataset.tab; // Get the data-tab attribute
+                    showTab(tabId);
+                });
+            });
+
+            // Function to initialize news ticker functionality (add close button)
+            function initNewsTicker() {
+                // Ensure the close button is only added once
+                if (newsTickerContent && !newsTickerContent.querySelector('.close-button')) {
+                    const closeButton = document.createElement('button');
+                    closeButton.className = 'close-button';
+                    closeButton.innerHTML = '&times;'; // '×' character
+                    closeButton.setAttribute('aria-label', 'Close news ticker');
+
+                    newsTickerContent.appendChild(closeButton);
+
+                    closeButton.addEventListener('click', () => {
+                        newsTickerContent.classList.add('hidden'); // Hide the entire section
+                        // Optionally, switch to the home tab after closing news ticker
+                        showTab('calendar'); // Default to calendar after closing news
+                    });
+                }
+            }
+
+            // Determine which tab to show on initial load
+            // Default to 'calendar' tab as per the provided HTML snippet's first button
+            showTab('calendar');
+        });
+    </script>
 </body>
 </html>
