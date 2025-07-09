@@ -2,16 +2,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Global Variables and Initial Setup ---
     let events = []; // Array to store agenda events
     let editingEventId = null; // To track which event is being edited
+    let currentCalendarDate = new Date(); // Tracks the currently displayed month in the calendar
 
     const eventForm = document.getElementById('event-form');
     const eventTitleInput = document.getElementById('event-title');
     const eventDateInput = document.getElementById('event-date');
     const eventDescriptionInput = document.getElementById('event-description');
-    const submitEventBtn = document.getElementById('submit-event-btn');
+    const submitEventBtn = docu ment.getElementById('submit-event-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const eventListContainer = document.getElementById('event-list');
     const noEventsMessage = document.getElementById('no-events-message');
     const newsTickerContent = document.getElementById('news-ticker-content'); // For news ticker functionality
+
+    // Calendar elements
+    const currentMonthYearDisplay = document.getElementById('current-month-year');
+    const prevMonthBtn = document.getElementById('prev-month-btn');
+    const nextMonthBtn = document.getElementById('next-month-btn');
+    const calendarGridContainer = document.getElementById('calendar-grid-container');
 
 
     // --- Tab Navigation Logic ---
@@ -50,9 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             initNewsTicker();
         }
 
-        // Special handling for calendar: render events when calendar tab is active
+        // Special handling for calendar: render events and calendar when calendar tab is active
         if (tabId === 'calendar') {
-            renderEvents();
+            renderEvents(); // Render event list
+            renderCalendar(currentCalendarDate); // Render calendar view
         }
     }
 
@@ -164,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         eventForm.reset(); // Clear form
         renderEvents(); // Re-render the list
+        renderCalendar(currentCalendarDate); // Re-render calendar to show new event
     });
 
     // Function to populate form for editing
@@ -192,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Are you sure you want to delete this event?')) {
             events = events.filter(event => event.id !== id);
             renderEvents();
+            renderCalendar(currentCalendarDate); // Re-render calendar after deleting event
             // If the deleted event was being edited, reset the form
             if (editingEventId === id) {
                 eventForm.reset();
@@ -201,6 +211,97 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    // --- Calendar View Functions ---
+
+    function renderCalendar(date) {
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-indexed
+
+        currentMonthYearDisplay.textContent = `${date.toLocaleString('en-US', { month: 'long' })} ${year}`;
+
+        // Clear previous days, but keep headers
+        while (calendarGridContainer.children.length > 7) { // 7 for the day headers (Sun-Sat)
+            calendarGridContainer.removeChild(calendarGridContainer.lastChild);
+        }
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+        const daysInMonth = lastDayOfMonth.getDate();
+
+        // Get the day of the week for the first day (0 = Sunday, 6 = Saturday)
+        const firstDayOfWeek = firstDayOfMonth.getDay();
+
+        // Calculate days from previous month to display
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+            const dayCell = createCalendarDayCell(prevMonthLastDay - i, true, null);
+            calendarGridContainer.appendChild(dayCell);
+        }
+
+        // Render current month's days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const currentDate = new Date(year, month, day);
+            const isToday = currentDate.toDateString() === new Date().toDateString();
+            const eventsForDay = events.filter(event => event.date === currentDate.toISOString().split('T')[0]);
+            const dayCell = createCalendarDayCell(day, false, isToday, eventsForDay, currentDate.toISOString().split('T')[0]);
+            calendarGridContainer.appendChild(dayCell);
+        }
+
+        // Calculate days from next month to display (to fill the last row)
+        // Ensure the grid always has 6 rows (6 * 7 = 42 cells total)
+        const totalCellsRendered = calendarGridContainer.children.length - 7; // Subtract headers
+        const remainingCells = 42 - totalCellsRendered;
+        for (let i = 1; i <= remainingCells; i++) {
+            const dayCell = createCalendarDayCell(i, true, null);
+            calendarGridContainer.appendChild(dayCell);
+        }
+    }
+
+    function createCalendarDayCell(dayNumber, isInactive, isToday, eventsForDay = [], fullDate = '') {
+        const dayCell = document.createElement('div');
+        dayCell.className = `calendar-day-cell ${isInactive ? 'inactive' : ''} ${isToday ? 'today' : ''}`;
+        dayCell.innerHTML = `<span class="calendar-day-number">${dayNumber}</span>`;
+
+        if (!isInactive && eventsForDay.length > 0) {
+            const eventsContainer = document.createElement('div');
+            eventsContainer.className = 'flex flex-col items-start w-full mt-6'; // Adjust margin-top to not overlap day number
+            eventsForDay.forEach(event => {
+                const eventElement = document.createElement('div');
+                eventElement.className = 'flex items-center w-full mb-1';
+                eventElement.innerHTML = `
+                    <span class="calendar-event-dot"></span>
+                    <span class="calendar-event-title">${event.title}</span>
+                `;
+                eventsContainer.appendChild(eventElement);
+            });
+            dayCell.appendChild(eventsContainer);
+        }
+
+        // Optional: Click a day to pre-fill the event form date
+        if (!isInactive) {
+            dayCell.addEventListener('click', () => {
+                eventDateInput.value = fullDate;
+                // Scroll to the form
+                eventForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                eventTitleInput.focus();
+            });
+        }
+
+        return dayCell;
+    }
+
+    // Calendar navigation event listeners
+    prevMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+        renderCalendar(currentCalendarDate);
+    });
+
+    nextMonthBtn.addEventListener('click', () => {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+        renderCalendar(currentCalendarDate);
+    });
+
 
     // --- Initial Load ---
     // Default to 'calendar' tab on initial load
