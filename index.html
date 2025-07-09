@@ -41,8 +41,78 @@
         .close-button:hover {
             background-color: #dc2626; /* Tailwind red-600 */
         }
+        
+/* Calendar specific styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e2e8f0; /* gray-200 */
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem; /* rounded-lg */
+            overflow: hidden;
+        }
+        .calendar-day-header {
+            background-color: #cbd5e0; /* gray-300 */
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            color: #4a5568; /* gray-700 */
+        }
+        .calendar-day-cell {
+            background-color: #ffffff; /* white */
+            min-height: 80px; /* Adjust as needed */
+            padding: 0.5rem;
+            text-align: right;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .calendar-day-cell:hover {
+            background-color: #f0f4f8; /* blue-50 */
+        }
+        .calendar-day-cell.inactive {
+            background-color: #f7fafc; /* gray-100 */
+            color: #a0aec0; /* gray-400 */
+            cursor: default;
+        }
+        .calendar-day-cell.today {
+            border: 2px solid #3498db; /* blue-500 */
+            box-shadow: 0 0 0 1px #3498db;
+        }
+        .calendar-event-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #3498db; /* blue-500 */
+            border-radius: 50%;
+            margin-top: 4px;
+            margin-right: 4px;
+            display: inline-block;
+        }
+        .calendar-event-title {
+            font-size: 0.75rem; /* text-xs */
+            color: #2c5282; /* blue-800 */
+            text-align: left;
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            padding-left: 4px;
+        }
+        .calendar-day-number {
+            font-weight: 700;
+            font-size: 1.125rem; /* text-lg */
+            color: #2c3e50; /* Darker blue-gray */
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
     </style>
 </head>
+    
 <body class="bg-gray-100 font-sans text-white">
     <!-- Header Content -->
     <header class="bg-blue-800 text-white py-6 text-center shadow-md">
@@ -68,46 +138,67 @@
     </header>
 
     <main class="max-w-6xl mx-auto mt-8 px-4">
+        
         <!-- Tab Content Containers -->
         <div id="calendar-content" class="tab-content bg-white p-8 rounded-lg shadow-lg border-l-4 border-blue-500 mb-6">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Department Calendar</h2>
             <div id="calendar" class="mb-4">
-                <!-- Agenda Form -->
-                <form id="event-form" class="bg-blue-50 p-6 rounded-lg shadow-inner mb-6">
-                    <input type="hidden" id="event-id">
-                    <div class="mb-4">
-                        <label for="event-title" class="block text-gray-700 text-sm font-bold mb-2">Event Title:</label>
-                        <input type="text" id="event-title" placeholder="e.g., Team Meeting" required
-                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    </div>
-                    <div class="mb-4">
-                        <label for="event-date" class="block text-gray-700 text-sm font-bold mb-2">Date:</label>
-                        <input type="date" id="event-date" required
-                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    </div>
-                    <div class="mb-6">
-                        <label for="event-description" class="block text-gray-700 text-sm font-bold mb-2">Description:</label>
-                        <textarea id="event-description" placeholder="Brief description of the event"
-                                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-24"></textarea>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <button type="submit" id="submit-event-btn"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
-                            Add Event
-                        </button>
-                        <button type="button" id="cancel-edit-btn"
-                                class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out hidden">
-                            Cancel Edit
-                        </button>
-                    </div>
-                </form>
 
-                <!-- Agenda List -->
-                <h3 class="text-xl font-semibold text-gray-800 mb-3">Upcoming Events</h3>
-                <div id="event-list" class="space-y-4">
-                    <!-- Events will be dynamically loaded here by JavaScript -->
-                    <p class="text-gray-500 text-center" id="no-events-message">No events scheduled. Add one above!</p>
+            <!-- Calendar Controls -->
+                <div class="flex justify-between items-center mb-4 p-2 bg-gray-100 rounded-md shadow-sm">
+                    <button id="prev-month-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md transition duration-300 ease-in-out">&lt; Prev</button>
+                    <h3 id="current-month-year" class="text-xl font-semibold text-gray-800"></h3>
+                    <button id="next-month-btn" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md transition duration-300 ease-in-out">Next &gt;</button>
                 </div>
+                <!-- Calendar Grid will be rendered here by JavaScript -->
+                <div id="calendar-grid-container" class="calendar-grid">
+                    <!-- Day headers -->
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+                    <!-- Calendar days will be rendered here -->
+                </div>
+            </div>
+
+            <!-- Agenda Form -->
+            <form id="event-form" class="bg-blue-50 p-6 rounded-lg shadow-inner mb-6 mt-8">
+                <input type="hidden" id="event-id">
+                <div class="mb-4">
+                    <label for="event-title" class="block text-gray-700 text-sm font-bold mb-2">Event Title:</label>
+                    <input type="text" id="event-title" placeholder="e.g., Team Meeting" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-4">
+                    <label for="event-date" class="block text-gray-700 text-sm font-bold mb-2">Date:</label>
+                    <input type="date" id="event-date" required
+                           class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <div class="mb-6">
+                    <label for="event-description" class="block text-gray-700 text-sm font-bold mb-2">Description:</label>
+                    <textarea id="event-description" placeholder="Brief description of the event"
+                              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-24"></textarea>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" id="submit-event-btn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                        Add Event
+                    </button>
+                    <button type="button" id="cancel-edit-btn"
+                            class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out hidden">
+                        Cancel Edit
+                    </button>
+                </div>
+            </form>
+
+            <!-- Agenda List -->
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">Upcoming Events</h3>
+            <div id="event-list" class="space-y-4">
+                <!-- Events will be dynamically loaded here by JavaScript -->
+                <p class="text-gray-500 text-center" id="no-events-message">No events scheduled. Add one above!</p>
             </div>
         </div>
 
