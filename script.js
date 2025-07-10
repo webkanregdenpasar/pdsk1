@@ -6,9 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const eventForm = document.getElementById('event-form');
     const eventTitleInput = document.getElementById('event-title');
-    const eventDateInput = document.getElementById('event-date');
+    const eventStartDateInput = document.getElementById('event-start-date'); // New input
+    const eventEndDateInput = document.getElementById('event-end-date');   // New input
     const eventDescriptionInput = document.getElementById('event-description');
-    const submitEventBtn = document.getElementById('submit-event-btn'); // Corrected typo here
+    const submitEventBtn = document.getElementById('submit-event-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const eventListContainer = document.getElementById('event-list');
     const noEventsMessage = document.getElementById('no-events-message');
@@ -104,20 +105,26 @@ document.addEventListener('DOMContentLoaded', () => {
             eventListContainer.appendChild(noEventsMessage);
             return;
         } else {
-            noEventsMessage.classList.add('hidden'); // Hide "No events" message
+            // Ensure the message is hidden if there are events
+            noEventsMessage.classList.add('hidden');
         }
 
-        events.sort((a, b) => new Date(a.date) - new Date(b.date)); // Sort by date
+        // Sort events by start date
+        events.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
         events.forEach(event => {
             const eventCard = document.createElement('div');
             eventCard.id = `event-${event.id}`;
             eventCard.className = 'bg-white border border-gray-200 p-4 rounded-lg shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center';
 
+            const dateDisplay = event.endDate && event.startDate !== event.endDate
+                ? `${event.startDate} to ${event.endDate}`
+                : event.startDate;
+
             eventCard.innerHTML = `
                 <div class="flex-grow mb-3 md:mb-0">
                     <h4 class="text-lg font-semibold text-blue-700">${event.title}</h4>
-                    <p class="text-gray-600 text-sm mb-1">${event.date}</p>
+                    <p class="text-gray-600 text-sm mb-1">${dateDisplay}</p>
                     <p class="text-gray-700 text-sm">${event.description}</p>
                 </div>
                 <div class="flex space-x-2">
@@ -142,11 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         const title = eventTitleInput.value.trim();
-        const date = eventDateInput.value;
+        const startDate = eventStartDateInput.value;
+        const endDate = eventEndDateInput.value || startDate; // If no end date, it's a single-day event
         const description = eventDescriptionInput.value.trim();
 
-        if (!title || !date) {
-            alert('Please enter event title and date.');
+        if (!title || !startDate) {
+            alert('Please enter event title and start date.');
+            return;
+        }
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('End date cannot be before start date.');
             return;
         }
 
@@ -154,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update existing event
             const eventIndex = events.findIndex(event => event.id === editingEventId);
             if (eventIndex > -1) {
-                events[eventIndex] = { ...events[eventIndex], title, date, description };
+                events[eventIndex] = { ...events[eventIndex], title, startDate, endDate, description };
             }
             editingEventId = null; // Reset editing state
             submitEventBtn.textContent = 'Add Event'; // Change button text back
@@ -164,7 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const newEvent = {
                 id: Date.now().toString(), // Simple unique ID
                 title,
-                date,
+                startDate,
+                endDate,
                 description
             };
             events.push(newEvent);
@@ -180,7 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const eventToEdit = events.find(event => event.id === id);
         if (eventToEdit) {
             eventTitleInput.value = eventToEdit.title;
-            eventDateInput.value = eventToEdit.date;
+            eventStartDateInput.value = eventToEdit.startDate;
+            eventEndDateInput.value = eventToEdit.endDate;
             eventDescriptionInput.value = eventToEdit.description;
             editingEventId = eventToEdit.id;
             submitEventBtn.textContent = 'Update Event';
@@ -243,8 +258,25 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let day = 1; day <= daysInMonth; day++) {
             const currentDate = new Date(year, month, day);
             const isToday = currentDate.toDateString() === new Date().toDateString();
-            const eventsForDay = events.filter(event => event.date === currentDate.toISOString().split('T')[0]);
-            const dayCell = createCalendarDayCell(day, false, isToday, eventsForDay, currentDate.toISOString().split('T')[0]);
+            const fullDateString = currentDate.toISOString().split('T')[0];
+
+            // Check if any event spans this day
+            const eventsOnThisDay = events.filter(event => {
+                const eventStart = new Date(event.startDate);
+                const eventEnd = new Date(event.endDate || event.startDate); // Handle single-day events
+                // Set times to midnight for accurate date comparison
+                eventStart.setHours(0,0,0,0);
+                eventEnd.setHours(0,0,0,0);
+                currentDate.setHours(0,0,0,0);
+
+                return currentDate >= eventStart && currentDate <= eventEnd;
+            });
+
+            // Only show title for events that *start* on this day to avoid clutter
+            const eventsStartingOnThisDay = events.filter(event => event.startDate === fullDateString);
+
+
+            const dayCell = createCalendarDayCell(day, false, isToday, eventsOnThisDay, fullDateString, eventsStartingOnThisDay);
             calendarGridContainer.appendChild(dayCell);
         }
 
@@ -258,30 +290,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function createCalendarDayCell(dayNumber, isInactive, isToday, eventsForDay = [], fullDate = '') {
+    function createCalendarDayCell(dayNumber, isInactive, isToday, eventsOnThisDay = [], fullDate = '', eventsStartingOnThisDay = []) {
         const dayCell = document.createElement('div');
         dayCell.className = `calendar-day-cell ${isInactive ? 'inactive' : ''} ${isToday ? 'today' : ''}`;
         dayCell.innerHTML = `<span class="calendar-day-number">${dayNumber}</span>`;
 
-        if (!isInactive && eventsForDay.length > 0) {
+        if (!isInactive && eventsOnThisDay.length > 0) {
             const eventsContainer = document.createElement('div');
             eventsContainer.className = 'flex flex-col items-start w-full mt-6'; // Adjust margin-top to not overlap day number
-            eventsForDay.forEach(event => {
-                const eventElement = document.createElement('div');
-                eventElement.className = 'flex items-center w-full mb-1';
-                eventElement.innerHTML = `
-                    <span class="calendar-event-dot"></span>
-                    <span class="calendar-event-title">${event.title}</span>
-                `;
-                eventsContainer.appendChild(eventElement);
+
+            // Show a dot for every event on this day (spanning or starting)
+            eventsOnThisDay.forEach(() => {
+                const dot = document.createElement('span');
+                dot.className = 'calendar-event-dot';
+                eventsContainer.appendChild(dot);
             });
+
+            // Show title only for events that START on this day
+            eventsStartingOnThisDay.forEach(event => {
+                const eventTitleElement = document.createElement('span');
+                eventTitleElement.className = 'calendar-event-title';
+                eventTitleElement.textContent = event.title;
+                eventsContainer.appendChild(eventTitleElement);
+            });
+
             dayCell.appendChild(eventsContainer);
         }
 
         // Optional: Click a day to pre-fill the event form date
         if (!isInactive) {
             dayCell.addEventListener('click', () => {
-                eventDateInput.value = fullDate;
+                eventStartDateInput.value = fullDate;
+                eventEndDateInput.value = fullDate; // Pre-fill end date to be same as start
                 // Scroll to the form
                 eventForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 eventTitleInput.focus();
